@@ -33,4 +33,14 @@ function toast(t){const e=document.querySelector('#toast');e.textContent=t;e.cla
   function paint(next){const m=mine(next),n=m.done.filter(Boolean).length,p=Math.round(n/4*100);tasksEl.innerHTML=taskData.map((t,i)=>`<button class="task ${m.done[i]?'done':''}" data-i="${i}"><span class="check">${m.done[i]?'<i data-lucide="check" width="15"></i>':''}</span><span class="task-info"><span class="task-title">${t[0]}</span><span class="task-meta">${t[1]}</span></span><span class="tag">${t[2]}</span></button>`).join('');document.querySelector('#taskCount').textContent=`${n} / 4`;document.querySelector('#percent').textContent=p+'%';document.querySelector('#bar').style.width=p+'%';document.querySelector('#myTag').textContent=member.name+' · '+p+'%';document.querySelector('#myStatus').textContent=p===100?'已完成，等搭子':'正在努力';tasksEl.querySelectorAll('.task').forEach(b=>b.onclick=async()=>{const fresh=await readRoom();mine(fresh).done[+b.dataset.i]=!mine(fresh).done[+b.dataset.i];await writeRoom(fresh);paint(fresh)});document.querySelector('#checkAll').onclick=async()=>{const fresh=await readRoom();mine(fresh).done=[true,true,true,true];await writeRoom(fresh);paint(fresh);toast('今天的任务已全部完成！')};const people=Object.values(next.members).filter(x=>x!==m);const other=people[0];if(other){document.querySelector('.person:nth-child(2) .person-name').textContent=other.name;document.querySelector('.person:nth-child(2) .person-status').innerHTML='<span class="status-dot"></span>今日 '+other.done.filter(Boolean).length+' / 4';}lucide.createIcons()}
   cloudLoad=async()=>{const next=await readRoom();paint(next)};await cloudLoad();setInterval(cloudLoad,10000);
 })();
+</script>
+<script>
+// Remove demo-only names left in the original mockup; real names come from each member's nickname.
+(function(){
+  const partner=document.querySelector('.person:nth-child(2) .person-name');
+  const note=document.querySelector('.note span');
+  const clean=()=>{if(partner&&partner.textContent==='周同学'){partner.textContent='等待搭子';document.querySelector('.person:nth-child(2) .person-status').innerHTML='<span class="status-dot"></span>等待加入';}if(note&&note.textContent.includes('周同学'))note.textContent='还没有其他搭子加入，分享房间码即可加入。';};
+  clean();setInterval(clean,1200);
+  document.querySelector('#share').onclick=()=>toast('打卡卡片已准备好，发给你的搭子吧');
+})();
 </script></body></html>
