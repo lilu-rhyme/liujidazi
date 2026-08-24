@@ -52,6 +52,22 @@ function toast(t){const e=document.querySelector('#toast');e.textContent=t;e.cla
   avatar.style.cursor='pointer';avatar.title='点击更换头像';
   let member=JSON.parse(localStorage.getItem('cet-buddy-member')||'null');
   if(member?.avatar)avatar.textContent=member.avatar;
-  avatar.addEventListener('click',()=>{member=member||{id:crypto.randomUUID(),name:'新搭子'};const i=Math.max(0,choices.indexOf(member.avatar));member.avatar=choices[(i+1)%choices.length];localStorage.setItem('cet-buddy-member',JSON.stringify(member));avatar.textContent=member.avatar;});
+  avatar.addEventListener('click',()=>{});
+})();
+</script>
+<script>
+(function(){
+  const avatar=document.querySelector('.person:first-child .avatar');
+  if(!avatar)return;
+  const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;document.body.appendChild(input);
+  avatar.title='点击上传头像';avatar.onclick=()=>input.click();
+  input.onchange=()=>{const file=input.files?.[0];if(!file)return;const img=new Image();const reader=new FileReader();reader.onload=()=>{img.onload=async()=>{const size=160,canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;const ctx=canvas.getContext('2d');const scale=Math.max(size/img.width,size/img.height);const w=img.width*scale,h=img.height*scale;ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h);const data=canvas.toDataURL('image/jpeg',.78);const member=JSON.parse(localStorage.getItem('cet-buddy-member')||'{}');member.avatar=data;localStorage.setItem('cet-buddy-member',JSON.stringify(member));avatar.textContent='';avatar.style.backgroundImage=`url(${data})`;avatar.style.backgroundSize='cover';avatar.style.backgroundPosition='center';try{const h={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'};const q=await fetch(`${SUPABASE_URL}/rest/v1/room_state?id=eq.${ROOM_CODE}&select=state`,{headers:h});const rows=await q.json();const next=rows[0]?.state?.members?rows[0].state:{members:{}};next.members[member.id]={...(next.members[member.id]||{}),name:member.name,avatar:data};await fetch(`${SUPABASE_URL}/rest/v1/room_state`,{method:'POST',headers:{...h,Prefer:'resolution=merge-duplicates'},body:JSON.stringify({id:ROOM_CODE,state:next})});toast('头像已更新，搭子也能看到');}catch{toast('头像已保存在本机，云端同步稍后重试')}};img.src=reader.result};reader.readAsDataURL(file)};
+})();
+</script>
+<script>
+(function(){
+  const nameEl=document.querySelector('.person:first-child .person-name');if(!nameEl)return;
+  nameEl.style.cursor='pointer';nameEl.title='点击修改昵称';
+  nameEl.onclick=async()=>{const member=JSON.parse(localStorage.getItem('cet-buddy-member')||'{}');const nextName=prompt('请输入新的昵称',member.name||'');if(!nextName||nextName.trim()===member.name)return;member.name=nextName.trim();localStorage.setItem('cet-buddy-member',JSON.stringify(member));nameEl.textContent=member.name;try{const h={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'};const q=await fetch(`${SUPABASE_URL}/rest/v1/room_state?id=eq.${ROOM_CODE}&select=state`,{headers:h});const rows=await q.json();const state=rows[0]?.state?.members?rows[0].state:{members:{}};state.members[member.id]={...(state.members[member.id]||{}),name:member.name};await fetch(`${SUPABASE_URL}/rest/v1/room_state`,{method:'POST',headers:{...h,Prefer:'resolution=merge-duplicates'},body:JSON.stringify({id:ROOM_CODE,state})});toast('昵称已更新');}catch{toast('昵称已修改，本机同步完成')}};
 })();
 </script></body></html>
