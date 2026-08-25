@@ -21,6 +21,20 @@ function render(){tasksEl.innerHTML=taskData.map((t,i)=>`<button class="task ${s
 function toast(t){const e=document.querySelector('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2200)}document.querySelector('#checkAll').onclick=()=>{state.done=[true,true,true,true];save();render();toast('今日任务已全部完成，记得告诉搭子！')};document.querySelector('#share').onclick=()=>toast('打卡卡片已准备好，去发给等待搭子吧');document.querySelector('#copyCode').onclick=()=>{navigator.clipboard?.writeText(ROOM_CODE);toast('房间码 '+ROOM_CODE+' 已复制')};document.querySelector('#nudge').onclick=e=>{e.currentTarget.classList.add('sent');e.currentTarget.querySelector('span').textContent='已提醒';toast('提醒已送达，温柔一点也有效')};document.querySelector('#today').textContent=new Intl.DateTimeFormat('zh-CN',{month:'long',day:'numeric',weekday:'short'}).format(new Date());const heat=document.querySelector('.heat');[1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1].forEach((v,i)=>{const x=document.createElement('i');x.className=v?(i>22?'hot':'on'):'';heat.appendChild(x)});render();cloudLoad();setInterval(cloudLoad,8000);
 </script>
 <script>
+(function(){
+  const me=JSON.parse(localStorage.getItem('cet-buddy-member')||'null');
+  const headers={apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`};
+  async function roster(){
+    try{
+      const r=await fetch(`${SUPABASE_URL}/rest/v1/room_state?id=eq.${ROOM_CODE}&select=state`,{headers});const rows=await r.json();const room=rows[0]?.state||{};const members=Object.values(room.members||{});const current=me&&members.find(x=>x.name===me.name)||{name:me?.name||'新搭子',done:[false,false,false,false],avatar:me?.avatar};
+      const others=members.filter(x=>x!==current);const duo=document.querySelector('.duo');if(duo&&members.length>0){duo.innerHTML=[current,...others].map((m,i)=>`<div class="person"><div class="avatar ${i?'coral':'blue'}">${m.avatar&&m.avatar.startsWith('data:')?'':(m.avatar||m.name||'?').slice(0,1)}</div><div class="person-main"><div class="person-name">${m.name||'搭子'}</div><div class="person-status"><span class="status-dot"></span>今日 ${(m.done||[]).filter(Boolean).length} / 4</div></div>${i===0?'<span class="tag">我的进度</span>':''}</div>`).join('');duo.querySelectorAll('.avatar').forEach((el,i)=>{const m=[current,...others][i];if(m?.avatar?.startsWith('data:')){el.style.backgroundImage=`url(${m.avatar})`;el.style.backgroundSize='cover';el.style.backgroundPosition='center';}})}
+      const total=members.length||1,done=members.reduce((n,m)=>n+(m.done||[]).filter(Boolean).length,0);const week=document.querySelector('#weekStat'),mins=document.querySelector('#minutesStat'),streak=document.querySelector('#streakStat');if(week)week.textContent=Math.round(done/(total*4)*100)+'%';if(mins)mins.textContent=done*15;if(streak)streak.textContent=done?1:0;
+    }catch{}
+  }
+  setTimeout(roster,2500);setInterval(roster,10000);
+})();
+</script>
+<script>
 // Each phone gets its own member record while the four tasks stay identical for the room.
 (async function(){
   const memberKey='cet-buddy-member';
